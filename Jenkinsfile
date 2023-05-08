@@ -78,8 +78,8 @@ pipeline {
                 sh "docker-compose -f ${env.WORKSPACE}/docker-compose.yml up -d"
             }
         }
-
-
+        
+        
        
     }
 }
