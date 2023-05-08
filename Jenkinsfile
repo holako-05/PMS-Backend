@@ -24,11 +24,15 @@ pipeline {
         }
 
         stage('SonarQube analysis') {
-            steps {
-                script {
-                    def scannerHome = tool 'SonarQube Scanner';
+           steps {
+                dir('product_management_system_original') {
                     withSonarQubeEnv('SonarQube') {
-                        sh "${scannerHome}/bin/sonar-scanner"
+                        sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar'
+                    }
+                }
+                dir('product_management_system_kafka') {
+                    withSonarQubeEnv('SonarQube') {
+                        sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar'
                     }
                 }
             }
