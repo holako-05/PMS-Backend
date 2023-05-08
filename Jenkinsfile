@@ -26,12 +26,12 @@ pipeline {
         stage('SonarQube analysis') {
            steps {
                 dir('product_management_system_original') {
-                    withSonarQubeEnv('SonarScanner') {
+                    withSonarQubeEnv('SonarQube') {
                         sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar'
                     }
                 }
                 dir('product_management_system_kafka') {
-                    withSonarQubeEnv('SonarScanner') {
+                    withSonarQubeEnv('SonarQube') {
                         sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar'
                     }
                 }
