@@ -48,16 +48,26 @@ pipeline {
             }
         }
 
-        stage('Build Docker image') {
+        stage('Build Docker images') {
             steps {
                 script {
-                    def app_version = sh(script: "mvn help:evaluate -Dexpression=project.version -q -DforceStdout", returnStdout: true).trim()
-                    def app_name = sh(script: "mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout", returnStdout: true).trim()
-                    def image_name = "your_dockerhub_user/${app_name}:${app_version}"
+                    dir('product_management_system_original') {
+                        def app_version_original = sh(script: "mvn help:evaluate -Dexpression=project.version -q -DforceStdout", returnStdout: true).trim()
+                        def app_name_original = sh(script: "mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout", returnStdout: true).trim()
+                        def image_name_original = "your_dockerhub_user/${app_name_original}:${app_version_original}"
+                        sh "docker build -t ${image_name_original} ."
+                        sh "docker login -u mouradtals -p 4M4n9?MgDbgpd6iD"
+                        sh "docker push ${image_name_original}"
+                    }
 
-                    sh "docker build -t ${image_name} ."
-                    sh "docker login -u your_dockerhub_user -p your_dockerhub_password"
-                    sh "docker push ${image_name}"
+                    dir('product_management_system_kafka') {
+                        def app_version_kafka = sh(script: "mvn help:evaluate -Dexpression=project.version -q -DforceStdout", returnStdout: true).trim()
+                        def app_name_kafka = sh(script: "mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout", returnStdout: true).trim()
+                        def image_name_kafka = "your_dockerhub_user/${app_name_kafka}:${app_version_kafka}"
+                        sh "docker build -t ${image_name_kafka} ."
+                        sh "docker login -u mouradtals -p 4M4n9?MgDbgpd6iD"
+                        sh "docker push ${image_name_kafka}"
+                    }
                 }
             }
         }
