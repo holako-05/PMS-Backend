@@ -1,0 +1,136 @@
+version: '3.9'
+
+services:
+
+  kafka:
+    container_name: kafka
+    image: obsidiandynamics/kafka
+    restart: "no"
+    ports:
+      - "2181:2181"
+      - "9092:9092"
+    environment:
+      KAFKA_LISTENERS: "INTERNAL://:29092,EXTERNAL://:9092"
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka:29092,EXTERNAL://localhost:9092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+      KAFKA_ZOOKEEPER_SESSION_TIMEOUT: "6000"
+      KAFKA_RESTART_ATTEMPTS: "10"
+      KAFKA_RESTART_DELAY: "5"
+      ZOOKEEPER_AUTOPURGE_PURGE_INTERVAL: "0"
+    networks:
+      - kafka_-net
+      - kafka-net
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    restart: "no"
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "kafka:29092"
+      JVM_OPTS: "-Xms16M -Xmx48M -Xss180K -XX:-TieredCompilation -XX:+UseStringDeduplication -noverify"
+    depends_on:
+      - "kafka"
+    networks:
+      - kafka_-net
+
+  mysql-original:
+    image: mysql:8.0.3
+    container_name: mysql-original
+    restart: always
+    environment:
+      MYSQL_HOST: mysql-original
+      MYSQL_USER: root
+      MYSQL_PASSWORD: mysql
+      MYSQL_ROOT_PASSWORD: mysql
+      MYSQL_DATABASE: product-management-original
+    volumes:
+      - ./mysql_product_management_original:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - original-net
+
+  pms-original:
+    container_name: pms-original
+    image: pms-original
+    restart: always
+    build: ./product_management_system_original
+    depends_on:
+      - mysql-original
+      - kafka
+    ports:
+      - "10000:10000"
+    environment:
+      MYSQL_HOST: mysql-original
+      MYSQL_USER: root
+      MYSQL_PASSWORD: mysql
+      MYSQL_ROOT_PASSWORD: mysql
+      MYSQL_DATABASE: product-management-original
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_BROKERCONNECT: "kafka:29092"
+    networks:
+      - original-net
+      - kafka_-net
+    volumes:
+      - ./product_management_system_frontend/public/assets/images:/app/images
+
+  mysql-kafka:
+    image: mysql:8.0.3
+    container_name: mysql-kafka
+    restart: always
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_HOST: mysql-original
+      MYSQL_USER: root
+      MYSQL_PASSWORD: mysql
+      MYSQL_ROOT_PASSWORD: mysql
+      MYSQL_DATABASE: product-management-kafka
+    volumes:
+      - ./mysql_product_management_kafka:/var/lib/mysql
+    networks:
+      - kafka-net
+
+  pms-kafka:
+    container_name: pms-kafka
+    image: pms-kafka
+    restart: always
+    build: ./product_management_system_kafka
+    ports:
+      - "10001:10000"
+    depends_on:
+      - mysql-kafka
+      - kafka
+    environment:
+      MYSQL_HOST: mysql-kafka
+      MYSQL_USER: root
+      MYSQL_PASSWORD: mysql
+      MYSQL_DATABASE: product-management-kafka
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_BROKERCONNECT: "kafka:29092"
+      KAFKA_LISTENERS: "INTERNAL://:29092,EXTERNAL://:9092"
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka:29092,EXTERNAL://localhost:9092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+      KAFKA_ZOOKEEPER_SESSION_TIMEOUT: "6000"
+      KAFKA_RESTART_ATTEMPTS: "10"
+      KAFKA_RESTART_DELAY: "5"
+    networks:
+      - kafka-net
+      - kafka_-net
+
+networks:
+  kafka_-net:
+    driver: bridge
+  original-net:
+    driver: bridge
+  kafka-net:
+    driver: bridge
+
+volumes:
+  mysql_product_management_original:
+    driver: local
+  mysql_product_management_kafka:
+    driver: local
