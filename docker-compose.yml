@@ -54,7 +54,7 @@ services:
 
   pms-original:
     container_name: pms-original
-    image: pms-original
+    image: mouradtals/product_management_system_original:0.0.1-SNAPSHOT
     restart: always
     build: ./product_management_system_original
     depends_on:
@@ -95,7 +95,7 @@ services:
 
   pms-kafka:
     container_name: pms-kafka
-    image: pms-kafka
+    image: mouradtals/product_management_system_kafka:0.0.1-SNAPSHOT
     restart: always
     build: ./product_management_system_kafka
     ports:
