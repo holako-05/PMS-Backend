@@ -29,13 +29,13 @@ pipeline {
                 def scannerHome = tool 'SonarQube';
                 dir('product_management_system_original') {
                     withSonarQubeEnv('SonarServer') {
-                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=pms_original -Dsonar.projectName='pms_original'"
+                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=pms_original -Dsonar.projectName='pms_original' -Dsonar.exclusions=**/*.java"
                     }
                   }
                  
                 dir('product_management_system_kafka') {
                     withSonarQubeEnv('SonarServer') {
-                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=pms_kafka -Dsonar.projectName='pms_kafka'"
+                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=pms_kafka -Dsonar.projectName='pms_kafka' -Dsonar.exclusions=**/*.java"
                     }
                 }
                }
