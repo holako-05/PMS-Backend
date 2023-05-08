@@ -28,13 +28,13 @@ pipeline {
                script{
                 def scannerHome = tool 'SonarQube';
                 dir('product_management_system_original') {
-                    withSonarQubeEnv('SonarQube') {
+                    withSonarQubeEnv('SonarServer') {
                         sh "${scannerHome}/bin/sonar-scanner"
                     }
                   }
                  
                 dir('product_management_system_kafka') {
-                    withSonarQubeEnv('SonarQube') {
+                    withSonarQubeEnv('SonarServer') {
                         sh "${scannerHome}/bin/sonar-scanner"
                     }
                 }
