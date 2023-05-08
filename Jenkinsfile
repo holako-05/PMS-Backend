@@ -73,25 +73,12 @@ pipeline {
         }
         
         
-        stage('Deploy') {
+        stage('Deploy using Docker Compose') {
             steps {
-                script {
-                    // Set the appropriate variables for your deployment
-                    def deploymentFolderPath = "/deployment/"
-
-                    // Copy the docker-compose.yml file to the deployment folder
-                    sh "cp /docker-compose.yml ${deploymentFolderPath}"
-
-                    // Execute the deployment commands
-                    sh '''
-                        cd ${deploymentFolderPath}
-                        docker-compose down
-                        docker-compose pull
-                        docker-compose up -d
-                    '''
-                }
+                sh "docker-compose -f ${env.WORKSPACE}/docker-compose.yml up -d"
             }
-         }
+        }
+
 
        
     }
