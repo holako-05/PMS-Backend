@@ -6,6 +6,13 @@ pipeline {
     }
 
     stages {
+
+        stage('Clean workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+        
         stage('Pull code from repository') {
             steps {
                 checkout scm
