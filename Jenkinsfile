@@ -1,13 +1,23 @@
+def mvn(String args, String dir) {
+    sh "mvn ${args} -f ${dir}/pom.xml"
+}
+
+def dockerBuildPush(String dir) {
+    def app_version = sh(script: "mvn help:evaluate -Dexpression=project.version -q -DforceStdout -f ${dir}/pom.xml", returnStdout: true).trim()
+    def app_name = sh(script: "mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout -f ${dir}/pom.xml", returnStdout: true).trim()
+    def image_name = "mouradtals/${app_name}:${app_version}"
+    sh "docker build -t ${image_name} ${dir}"
+    sh "docker push ${image_name}"
+}
+
 pipeline {
     agent any
- 
+
     tools {
         maven 'MAVEN_HOME'
     }
 
     stages {
-
-        
         stage('Pull code from repository') {
             steps {
                 checkout scm
@@ -16,30 +26,22 @@ pipeline {
 
         stage('Build project') {
             steps {
-                dir('product_management_system_original') {
-                    sh 'mvn clean install -DskipTests'
-                }
-                dir('product_management_system_kafka') {
-                    sh 'mvn clean install -DskipTests'
-                }
+                mvn 'clean install -DskipTests', 'product_management_system_original'
+                mvn 'clean install -DskipTests', 'product_management_system_kafka'
             }
         }
 
         stage('SonarQube analysis') {
             steps {
                 script {
-                    def scannerHome = tool 'SonarQube'; 
-                    dir('product_management_system_original') {
+                    def scannerHome = tool 'SonarQube'
+                    def sonarAnalysis = { dir ->
                         withSonarQubeEnv('SonarServer') {
-                            sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=pms_original -Dsonar.projectName='pms_original' -Dsonar.exclusions=**/*.java"
+                            sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=${dir} -Dsonar.projectName=${dir} -Dsonar.exclusions=**/*.java -f ${dir}/pom.xml"
                         }
                     }
-                 
-                    dir('product_management_system_kafka') {
-                        withSonarQubeEnv('SonarServer') {
-                            sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=pms_kafka -Dsonar.projectName='pms_kafka' -Dsonar.exclusions=**/*.java"
-                        }
-                    }
+                    sonarAnalysis('product_management_system_original')
+                    sonarAnalysis('product_management_system_kafka')
                 }
             }
         }
@@ -53,28 +55,13 @@ pipeline {
         stage('Build Docker images') {
             steps {
                 script {
-                    dir('product_management_system_original') {
-                        def app_version_original = sh(script: "mvn help:evaluate -Dexpression=project.version -q -DforceStdout", returnStdout: true).trim()
-                        def app_name_original = sh(script: "mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout", returnStdout: true).trim()
-                        def image_name_original = "mouradtals/${app_name_original}:${app_version_original}"
-                        sh "docker build -t ${image_name_original} ."
-                        sh "docker login -u mouradtals -p 4M4n9?MgDbgpd6iD"
-                        sh "docker push ${image_name_original}"
-                    }
-
-                    dir('product_management_system_kafka') {
-                        def app_version_kafka = sh(script: "mvn help:evaluate -Dexpression=project.version -q -DforceStdout", returnStdout: true).trim()
-                        def app_name_kafka = sh(script: "mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout", returnStdout: true).trim()
-                        def image_name_kafka = "mouradtals/${app_name_kafka}:${app_version_kafka}"
-                        sh "docker build -t ${image_name_kafka} ."
-                        sh "docker login -u mouradtals -p 4M4n9?MgDbgpd6iD"
-                        sh "docker push ${image_name_kafka}"
-                    }
+                    sh "docker login -u mouradtals -p 4M4n9?MgDbgpd6iD"
+                    dockerBuildPush('product_management_system_original')
+                    dockerBuildPush('product_management_system_kafka')
                 }
             }
         }
-        
-        
+
         stage('Deploy using Docker Compose') {
             steps {
                 sh "docker-compose -f ${env.WORKSPACE}/docker-compose.yml up -d"
