@@ -34,14 +34,18 @@ pipeline {
         stage('SonarQube analysis') {
             steps {
                 script {
-                    def scannerHome = tool 'SonarQube'
-                    def sonarAnalysis = { dir ->
+                    def scannerHome = tool 'SonarQube'; 
+                    dir('product_management_system_original') {
                         withSonarQubeEnv('SonarServer') {
-                            sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=${dir} -Dsonar.projectName=${dir} -Dsonar.exclusions=**/*.java -f ${dir}/pom.xml"
+                            sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=pms_original -Dsonar.projectName='pms_original' -Dsonar.exclusions=**/*.java"
                         }
                     }
-                    sonarAnalysis('product_management_system_original')
-                    sonarAnalysis('product_management_system_kafka')
+
+                    dir('product_management_system_kafka') {
+                        withSonarQubeEnv('SonarServer') {
+                            sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=pms_kafka -Dsonar.projectName='pms_kafka' -Dsonar.exclusions=**/*.java"
+                        }
+                    }
                 }
             }
         }
