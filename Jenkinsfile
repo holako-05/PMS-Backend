@@ -59,12 +59,15 @@ pipeline {
         stage('Build Docker images') {
             steps {
                 script {
-                    sh "docker login -u mouradtals -p 4M4n9?MgDbgpd6iD"
-                    dockerBuildPush('product_management_system_original')
-                    dockerBuildPush('product_management_system_kafka')
+                    withCredentials([usernamePassword(credentialsId: 'DOCKER_CREDS', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
+                        dockerBuildPush('product_management_system_original')
+                        dockerBuildPush('product_management_system_kafka')
+                    }
                 }
             }
         }
+
 
         stage('Deploy using Docker Compose') {
             steps {
